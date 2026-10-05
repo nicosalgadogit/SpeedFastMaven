@@ -1,17 +1,16 @@
 package model;
 
 public class Pedido {
-
     private int id;
     private String direccionEntrega;
     private String tipo;
     private EstadoPedido estado;
 
-    public Pedido(int id, String direccionEntrega, String tipo) {
+    public Pedido(int id, String direccionEntrega, String tipo, EstadoPedido estado) {
         this.id = id;
         this.direccionEntrega = direccionEntrega;
         this.tipo = tipo;
-        this.estado = EstadoPedido.PENDIENTE;
+        this.estado = estado;
     }
 
     public int getId() { return id; }
@@ -21,10 +20,10 @@ public class Pedido {
     public String getTipo() { return tipo; }
     public void setTipo(String tipo) { this.tipo = tipo; }
     public EstadoPedido getEstado() { return estado; }
-    public void setEstado(EstadoPedido nuevoEstado) { this.estado = nuevoEstado; }
+    public void setEstado(EstadoPedido estado) { this.estado = estado; }
 
     @Override
     public String toString() {
-        return "Pedido #" + id + " [" + direccionEntrega + "] (" + tipo + ") - Estado: " + estado;
+        return id + " - " + direccionEntrega + " (" + tipo + ")";
     }
 }
