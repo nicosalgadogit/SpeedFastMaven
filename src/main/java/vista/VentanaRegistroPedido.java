@@ -6,62 +6,76 @@ import java.awt.*;
 
 public class VentanaRegistroPedido extends JFrame {
 
-    private JTextField txtId;
     private JTextField txtDireccion;
     private JComboBox<String> cmbTipo;
-    private ListaPedidos listapedidos;
+    private JComboBox<EstadoPedido> cmbEstado;
+    private PedidoDAO pedidoDAO = new PedidoDAO();
+    private Pedido pedidoAEditar;
+    private VentanaListaPedidos ventanaLista;
 
-    public VentanaRegistroPedido(ListaPedidos listapedidos) {
-        this.listapedidos = listapedidos;
+    public VentanaRegistroPedido(Pedido pedidoAEditar, VentanaListaPedidos ventanaLista) {
+        this.pedidoAEditar = pedidoAEditar;
+        this.ventanaLista = ventanaLista;
 
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        setTitle("Registro de pedidos");
-        setSize(300, 250);
-        setResizable(false);
+        setTitle(pedidoAEditar == null ? "Registrar Pedido" : "Editar Pedido");
+        setSize(320, 250);
         setLocationRelativeTo(null);
         setLayout(new GridLayout(4, 2, 10, 10));
 
-        add(new JLabel("ID del Pedido:"));
-        txtId = new JTextField();
-        add(txtId);
-
-        add(new JLabel("Direccion del Pedido:"));
+        add(new JLabel("Dirección:"));
         txtDireccion = new JTextField();
         add(txtDireccion);
 
-        add(new JLabel("Tipo del Pedido:"));
+        add(new JLabel("Tipo:"));
         cmbTipo = new JComboBox<>(new String[]{"Comida", "Encomienda", "Express"});
         add(cmbTipo);
 
-        JButton btnRegistrar = new JButton("Registrar");
-        add(btnRegistrar);
+        add(new JLabel("Estado:"));
+        cmbEstado = new JComboBox<>(EstadoPedido.values());
+        add(cmbEstado);
 
-        btnRegistrar.addActionListener(e -> {
+        JButton btnGuardar = new JButton(pedidoAEditar == null ? "Registrar" : "Guardar cambios");
+        add(btnGuardar);
 
-            String idTexto = txtId.getText();
-            String direccion = txtDireccion.getText();
-            String tipo = cmbTipo.getSelectedItem().toString();
+        if (pedidoAEditar != null) {
+            txtDireccion.setText(pedidoAEditar.getDireccionEntrega());
+            cmbTipo.setSelectedItem(pedidoAEditar.getTipo());
+            cmbEstado.setSelectedItem(pedidoAEditar.getEstado());
+        }
 
-            if (idTexto.trim().isEmpty() || direccion.trim().isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Favor de completar todos los campos", "Validación", JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-
-            int id;
-            try {
-                id = Integer.parseInt(idTexto.trim());
-            } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(this, "El ID debe ser un número.", "Validación", JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-            Pedido nuevoPedido = new Pedido(id, direccion, tipo);
-            new PedidoDAO().guardar(nuevoPedido);
-            JOptionPane.showMessageDialog(this, "Pedido guardado correctamente.");
-
-            txtId.setText("");
-            txtDireccion.setText("");
-        });
+        btnGuardar.addActionListener(e -> guardar());
 
         setVisible(true);
+    }
+
+    private void guardar() {
+        String direccion = txtDireccion.getText().trim();
+        String tipo = (String) cmbTipo.getSelectedItem();
+        EstadoPedido estado = (EstadoPedido) cmbEstado.getSelectedItem();
+
+        if (direccion.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "La dirección es obligatoria.", "Validación", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        boolean exito;
+        if (pedidoAEditar == null) {
+            Pedido nuevo = new Pedido(0, direccion, tipo, estado);
+            exito = pedidoDAO.create(nuevo);
+        } else {
+            pedidoAEditar.setDireccionEntrega(direccion);
+            pedidoAEditar.setTipo(tipo);
+            pedidoAEditar.setEstado(estado);
+            exito = pedidoDAO.update(pedidoAEditar);
+        }
+
+        if (exito) {
+            JOptionPane.showMessageDialog(this, "Pedido guardado correctamente.");
+            if (ventanaLista != null) ventanaLista.actualizarTabla();
+            dispose();
+        } else {
+            JOptionPane.showMessageDialog(this, "No se pudo guardar el pedido.", "Error", JOptionPane.ERROR_MESSAGE);
+        }
     }
 }
